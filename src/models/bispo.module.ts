@@ -1,4 +1,5 @@
 import { Celula } from './celula.module';
+import { Movimento } from './movimento.module';
 import { Peca } from './peca.module';
 
 export class Bispo extends Peca {
@@ -7,17 +8,12 @@ export class Bispo extends Peca {
         super("bispo", corPeca);
     }
     
-    possiveisMovimentos(i: number, j: number, tabuleiro: Celula[][]): number[][] {
+    possiveisMovimentos(i: number, j: number, tabuleiro: Celula[][]): Movimento[] {
         let movimentosPossiveis = [];
-        for(let incremento=1;super.possivel(i-incremento,j-incremento, tabuleiro);incremento++)
-            movimentosPossiveis.push([i - incremento, j - incremento]);
-		for(let incremento=1;super.possivel(i+incremento,j+incremento, tabuleiro);incremento++)
-            movimentosPossiveis.push([i + incremento, j + incremento]);
-		for(let incremento=1;super.possivel(i-incremento,j+incremento, tabuleiro);incremento++)
-            movimentosPossiveis.push([i - incremento, j + incremento]);
-        for(let incremento=1;super.possivel(i+incremento,j-incremento, tabuleiro);incremento++)
-            movimentosPossiveis.push([i + incremento, j - incremento]);
-        
+        movimentosPossiveis = movimentosPossiveis.concat(super.possiveisAoLado(i,j, tabuleiro, -1, -1));
+        movimentosPossiveis = movimentosPossiveis.concat(super.possiveisAoLado(i,j, tabuleiro, +1, +1));
+        movimentosPossiveis = movimentosPossiveis.concat(super.possiveisAoLado(i,j, tabuleiro, -1, +1));
+        movimentosPossiveis = movimentosPossiveis.concat(super.possiveisAoLado(i,j, tabuleiro, +1, -1));
         return movimentosPossiveis
     }
 }
