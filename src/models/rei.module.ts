@@ -3,9 +3,8 @@ import { Peca } from './peca.module';
 
 export class Rei extends Peca {
 
-    constructor() {
-        super()
-        super.nomePeca = "rei";
+    constructor(corPeca: string) {
+        super("rei", corPeca);
     }
     
     possiveisMovimentos(tabuleiro: Celula[][]) {

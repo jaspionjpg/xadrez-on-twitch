@@ -79,18 +79,25 @@
 </div>
 
 <div class="content" role="main">
-
-  
-  <div id="tabuleiro">
+  <div class="tabuleiro">
     <div *ngFor="let linha of tabuleiro; let i = index" class="row linha" >
-      <div *ngFor="let celula of linha; let j = index" class="col celula" [ngClass]="{'corCasaPreta': celula.corPreta, 'corCasaBranca': !celula.corPreta, 'minhaPecas': celula.corPeca == minhaPecas}">
+      <div *ngFor="let celula of linha; let j = index" 
+        class="col celula" 
+        [ngClass]="{'corCasaPreta': celula.corPreta, 
+        'corCasaBranca': !celula.corPreta, 
+        'minhaPecas': celula.peca?.corPeca == minhasPecas}"
+        (click)="clicarCelula(i, j)">
         <span *ngIf="j == 0" class="linhaCelula">
           {{8 - celula.linha}}
         </span>
         <span *ngIf="i == 7" class="letraCelula">
           {{celula.letra}}
         </span> 
-        <img *ngIf="celula.temPeca" width="70px" class="peca" [src]="'assets/images/' + celula.peca + '-' + celula.corPeca + '.png'"/>
+        <span *ngIf="celula.possivelIr && celula.peca == null" class="possivelIr"></span>
+        <span *ngIf="celula.possivelIr && celula.peca != null" class="possivelIrCapiturando"></span>
+        <span *ngIf="celula.movimentoNaoPossivel" class="movimentoNaoPossivel"></span>
+        <span *ngIf="celula.clicada" class="pecaClicada"></span>
+        <img *ngIf="celula.peca != null" width="70px" class="peca" [src]="'assets/images/' + celula.peca.nomePeca + '-' + celula.peca.corPeca + '.png'"/>
       </div>
     </div>
   </div>

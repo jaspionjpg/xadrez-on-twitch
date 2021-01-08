@@ -59,7 +59,9 @@ export class Celula {
 
     public peca: Peca = null;
 
-    public possivelIr: boolean = true;
+    public possivelIr: boolean = false;
+    public movimentoNaoPossivel: boolean = false;
+    public clicada: boolean = false;
 
     constructor(linha:number, coluna:number, iniciarComPeca: boolean =  false) {
         this.linha = linha;

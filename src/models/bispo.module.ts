@@ -7,7 +7,17 @@ export class Bispo extends Peca {
         super("bispo", corPeca);
     }
     
-    possiveisMovimentos(tabuleiro: Celula[][]) {
+    possiveisMovimentos(i: number, j: number, tabuleiro: Celula[][]): number[][] {
+        let movimentosPossiveis = [];
+        for(let incremento=1;super.possivel(i-incremento,j-incremento, tabuleiro);incremento++)
+            movimentosPossiveis.push([i - incremento, j - incremento]);
+		for(let incremento=1;super.possivel(i+incremento,j+incremento, tabuleiro);incremento++)
+            movimentosPossiveis.push([i + incremento, j + incremento]);
+		for(let incremento=1;super.possivel(i-incremento,j+incremento, tabuleiro);incremento++)
+            movimentosPossiveis.push([i - incremento, j + incremento]);
+        for(let incremento=1;super.possivel(i+incremento,j-incremento, tabuleiro);incremento++)
+            movimentosPossiveis.push([i + incremento, j - incremento]);
         
+        return movimentosPossiveis
     }
 }

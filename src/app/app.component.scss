@@ -1,4 +1,7 @@
 
+.tabuleiro{
+    border:#000 solid 1px
+}
 .linha {
     height:70px; 
 }
@@ -8,7 +11,64 @@
     position: relative;
     display: inline-block;
 }
+
+.celula:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 17px rgba(0, 0, 0, 0.35);
+  }
 .peca {
+    z-index: 5;
+    display: block;
+    position: relative;
+}
+
+.possivelIr {
+    background-clip: content-box;
+    border-radius: 50%;
+    box-sizing: border-box;
+    pointer-events: none;
+    color:#312e2b;
+    width:55%;
+    height: 55%;
+    position: absolute; 
+    background-color: rgba(0,0,0,.3);
+    padding: 4.2%;
+    left:22.5%;
+    top:22.5%;
+}
+
+.possivelIrCapiturando {
+    background-clip: content-box;
+    border-radius: 50%;
+    box-sizing: border-box;
+    pointer-events: none;
+    color:#312e2b;
+    width:90%;
+    height: 90%;
+    left:5%;
+    top:5%;
+    border: 5px solid rgba(0,0,0,.2);
+    position: absolute; 
+    padding: 4.2%;
+    border-width: 5.4px
+}
+
+.pecaClicada {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    background-color: rgba(255,255,0,.5);
+    z-index: 3;
+}
+.movimentoNaoPossivel {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    background-color: rgba(255, 60, 0, 0.5);
+    z-index: 3;
+}
+.minhasPecas {
+    cursor: pointer;
 }
 
 .corCasaPreta {
@@ -20,11 +80,13 @@
 }
 
 .letraCelula {
+    font-weight: bolder;
     position: absolute; 
     bottom: 3px;
     right: 3px; 
 }
 .linhaCelula {
+    font-weight: bolder;
     position: absolute; 
     top: 3px;
     left: 3px; 
