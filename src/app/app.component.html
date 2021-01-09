@@ -146,8 +146,9 @@
                   role="progressbar"
                   [style.width]="(movimento.value.numeroVezes / votos.size * 100) + '%'" 
                   [aria-valuenow]="(movimento.value.numeroVezes / votos.size * 100) + '%'" 
+                  [ngClass]="{'bg-danger': !movimento.value.podeMover}"
                   aria-valuemin="0" 
-                  aria-valuemax="100">{{(movimento.value.numeroVezes / votos.size * 100) + '%'}}%</div>
+                  aria-valuemax="100">{{(movimento.value.numeroVezes / votos.size * 100) + '%'}}% {{movimento.value.movimento.podeMover}}</div>
             </div>
             
           </div>

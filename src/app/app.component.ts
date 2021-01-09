@@ -43,9 +43,17 @@ export class AppComponent {
   }
   
   keyDescOrder = (a: any, b: any): number => {
+    if (!a.value.podeMover) 
+      return 1
+    if (!b.value.podeMover) 
+      return -1
     return a.value.numeroVezes > b.value.numeroVezes? -1 : (b.value.numeroVezes > a.value.numeroVezes ? 1 : 0);
   }
   keyDescOrder2 = (a: any, b: any): number => {
+    if (!a[1].podeMover) 
+      return 1
+    if (!b[1].podeMover) 
+      return -1
     return a[1].numeroVezes > b[1].numeroVezes? -1 : (b[1].numeroVezes > a[1].numeroVezes ? 1 : 0);
   }
 
@@ -59,8 +67,6 @@ export class AppComponent {
 
   posicaoReiPreto = [0, 4]
   posicaoReiBranco = [7, 4]
-
-  closeResult = '';
 
   constructor(public modalService: NgbModal, 
               public config: NgbModalConfig) {
@@ -108,27 +114,28 @@ export class AppComponent {
           let destinoJ = Celula.pegarLinha(palavras[2][0])
 
           let nickMessage = tags['display-name'];
-          if (this.tabuleiro[i][j].peca != null
-              && !this.votos.has(nickMessage)
+          if (this.tabuleiro[i][j].peca != null && this.tabuleiro[i][j].peca.corPeca != this.minhasPecas
+              // && !this.votos.has(nickMessage)
               ) {
             if (this.movimentosVotos.has(comando)) {
               this.movimentosVotos.set(comando, {movimento: this.movimentosVotos.get(comando).movimento, 
                                                 numeroVezes: this.movimentosVotos.get(comando).numeroVezes + 1,
                                                 de: palavras[1],
-                                                para: palavras[2]})
+                                                para: palavras[2],
+                                                podeMover: this.movimentosVotos.get(comando).podeMover})
             } else {
               let podeMover: boolean = this.tabuleiro[i][j].peca.possiveisMovimentos(i, j, this.tabuleiro).filter(it => {
                 return it.destinoI == destinoI && it.destinoJ == destinoJ
               }).length > 0
-              if (podeMover) {
+              // if (podeMover) {
                 if (this.votos.size == 0)
                   this.startTimer(20)
 
                 let movimento = new Movimento(i, j, destinoI, destinoJ, this.tabuleiro[destinoI][destinoJ].peca != null)
-                this.movimentosVotos.set(comando, {movimento: movimento, numeroVezes: 1, de: palavras[1], para: palavras[2]})
-              } else {
-                return;
-              }
+                this.movimentosVotos.set(comando, {movimento: movimento, numeroVezes: 1, de: palavras[1], para: palavras[2], podeMover: podeMover})
+              // } else {
+              //   return;
+              // }
             }
             this.votos.add(tags['display-name'])
           }
@@ -409,8 +416,8 @@ export class NgbdModalEscolherCor {
   nick: string;
   constructor(public activeModal: NgbActiveModal) {}
 
-  onKey(value: any) {
-    this.nick = event.target.value;
+  onKey(event: any) {
+    this.nick = event.target.value.trim();
   }
   escolherModo(modo:string) {
     this.modoJogo = modo;
