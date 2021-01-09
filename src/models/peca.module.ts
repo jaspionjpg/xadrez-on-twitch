@@ -1,5 +1,4 @@
 import { Celula } from './celula.module';
-import * as myGlobals from 'globals';
 import { Movimento } from './movimento.module';
 
 export abstract class Peca {

@@ -87,7 +87,8 @@
         <img [ngStyle]="{'top':29 + (71 * (5 - 3)) + 'px', 'left': 23 + (70 * 6) + 'px'}" class="seta" src="assets/images/setareta3.png" alt="Your Logo Alt"/>
       -->
       </div>
-      <div *ngFor="let linha of tabuleiro; let i = index" class="row linha" >
+      <div *ngFor="let linha of getTabuleiro(); let i = index" 
+        class="row linha" >
         <div *ngFor="let celula of linha; let j = index" 
           class="col celula" 
           [ngClass]="{'corCasaPreta': celula.corPreta, 

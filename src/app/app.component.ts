@@ -17,7 +17,8 @@ export class AppComponent {
   title = 'xadrez-on-twitch';
   tabuleiro: Celula[][];
 
-  minhasPecas = "branco"
+  minhasPecas = "branco";
+  corAMover = "branco";
 
   posicaoReiPreto = [0, 4]
   posicaoReiBranco = [7, 4]
@@ -30,6 +31,11 @@ export class AppComponent {
     
     myGlobals.minhaCor = this.minhasPecas
     this.tabuleiro = this.criarTabuleiro();
+
+    this.modalService.open(NgbdModalEscolherCor)
+      .result.then((result) => {
+        this.minhasPecas = result
+    })
   }
 
   criarTabuleiro(): Celula[][] {
@@ -43,14 +49,22 @@ export class AppComponent {
     return tabuleiro;
   }
 
+  getTabuleiro() {
+    return (this.minhasPecas == 'branco') ? this.tabuleiro : this.tabuleiro.slice().reverse();
+  }
+  getIndexTabuleiro(index) {
+    return (this.minhasPecas == 'branco') ? index: 7 - index;
+  }
+
   pecaClicada = [0, 0]
   possiveisIr = []
   movimentosErrados = []
 
   clicarCelula(i: number, j: number) {
+    i = this.getIndexTabuleiro(i);
     this.limparAcoes()
 
-    if (this.tabuleiro[i][j].peca != null && this.minhasPecas == this.tabuleiro[i][j].peca.corPeca) {
+    if (this.tabuleiro[i][j].peca != null && this.corAMover == this.tabuleiro[i][j].peca.corPeca) {
       return this.sinalizarMovimentos(i, j)
     }
     
@@ -69,16 +83,20 @@ export class AppComponent {
     console.log(this.tabuleiro[destinoI][destinoJ].peca)
 
     if (this.tabuleiro[destinoI][destinoJ].peca.nomePeca == "rei") {
-      this.posicaoReiBranco = [destinoI, destinoJ]
+      if (this.tabuleiro[destinoI][destinoJ].peca.corPeca == "branco") 
+        this.posicaoReiBranco = [destinoI, destinoJ]
+      else 
+        this.posicaoReiPreto = [destinoI, destinoJ]
     }
 
     if(this.verificarSeReiNaoEstaEmCheque()) {
       console.log("rei cagado")
       this.tabuleiro[pecaClicada[0]][pecaClicada[1]].peca = this.tabuleiro[destinoI][destinoJ].peca
       this.tabuleiro[destinoI][destinoJ].peca = pecaAnteriorNoDestino
+      return;
     } 
 
-    if(this.verificarMate()) {
+    if (this.verificarMate()) {
 
     }
 
@@ -94,6 +112,13 @@ export class AppComponent {
           if  (result == "torre") 
             this.tabuleiro[destinoI][destinoJ].peca = new Torre(this.tabuleiro[destinoI][destinoJ].peca.corPeca)
         })}
+
+    if (this.corAMover == "preto") 
+      this.corAMover = "branco"
+    else 
+      this.corAMover = "preto"
+
+    this.possiveisIr = []
   }
   
   verificarMate() :boolean{
@@ -108,7 +133,7 @@ export class AppComponent {
       for (let y = 0; y < linha.length; y++) {
         let celula = linha[y];
 
-        if (celula.peca != null && celula.peca.corPeca != this.minhasPecas) {
+        if (celula.peca != null && celula.peca.corPeca != this.corAMover) {
           let pecasAAtacar = celula.peca.possiveisMovimentos(x, y, this.tabuleiro).filter(it => {
             return it.destinoI == rei[0] && it.destinoJ == rei[1] && it.capturar
           })
@@ -127,7 +152,7 @@ export class AppComponent {
   }
 
   pegarMeuRei() {
-    if(this.minhasPecas == "branco") {
+    if(this.corAMover == "branco") {
       return this.posicaoReiBranco;
     } else {
       return this.posicaoReiPreto;
@@ -190,6 +215,28 @@ export class AppComponent {
   `
 })
 export class NgbdModalEscolherPeca {
-  coiso = "asdfasdfas"
+  constructor(public activeModal: NgbActiveModal) {}
+}
+
+@Component({
+  selector: 'app-root',
+  styleUrls: ['./app.component.scss'],
+  template: `
+    <div class="modal-header">
+      <h4 class="modal-title" center id="modal-basic-title">Escolha a cor a jogar</h4>
+    </div>
+    <div class="modal-body">
+      <div class="row ">
+        <div class="col escolherPecaPeao" align="center">
+          <img width="70px" class="peca" [src]="'assets/images/rei-branco.png'" (click)="activeModal.close('branco')"/>
+        </div>
+        <div class="col escolherPecaPeao" align="center">
+          <img width="70px" class="peca" [src]="'assets/images/rei-preto.png'" (click)="activeModal.close('preto')"/>
+        </div>
+      </div>
+    </div>
+  `
+})
+export class NgbdModalEscolherCor {
   constructor(public activeModal: NgbActiveModal) {}
 }
