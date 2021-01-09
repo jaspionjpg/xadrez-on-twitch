@@ -1,13 +1,27 @@
 
 .tabuleiro{
-    border:#000 solid 1px
+    position: relative;
+    // border:#000 solid 1px;
+}
+.content {
+   margin-right: 15px;
+   margin-left: 15px;;
+}
+.seta{
+    position: absolute;
+    z-index: 10;
+    opacity : 0.75
 }
 .linha {
     height:70px; 
+    margin: 0px;
+    min-width: 560px;
+    max-width: 563px;
 }
 .celula {
     width:70px; 
     height:70px; 
+    padding:0px;
     position: relative;
     display: inline-block;
 }
@@ -67,7 +81,11 @@
     background-color: rgba(255, 60, 0, 0.5);
     z-index: 3;
 }
-.minhasPecas {
+.minhaPecas {
+    cursor: pointer;
+}
+
+.escolherPecaPeao {
     cursor: pointer;
 }
 
@@ -90,4 +108,21 @@
     position: absolute; 
     top: 3px;
     left: 3px; 
+}
+
+.progress {
+    margin-top: 3px;
+}
+.progressbraba {
+    position: relative;
+}
+.no-padding {
+    padding-right: 0px;
+}
+.iconePeca {
+    margin-top: 3px;
+}
+.movimento {
+    font-size: 18px;
+    font-weight: bold;
 }
