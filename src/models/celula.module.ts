@@ -16,6 +16,16 @@ letras.set(5, "F")
 letras.set(6, "G")
 letras.set(7, "H")
 
+var linhas = new Map();
+linhas.set("A", 0)
+linhas.set("B", 1)
+linhas.set("C", 2)
+linhas.set("D", 3)
+linhas.set("E", 4)
+linhas.set("F", 5)
+linhas.set("G", 6)
+linhas.set("H", 7)
+
 var pecasInicias = new Map();
 pecasInicias.set("00", new Torre("preto"))
 pecasInicias.set("01", new Cavalo("preto"));
@@ -75,5 +85,9 @@ export class Celula {
         if (iniciarComPeca && pecasInicias.has(linha+""+coluna)) {
             this.peca = pecasInicias.get(linha+""+coluna);
         }
+    }
+
+    static pegarLinha(letra: string){
+        return linhas.get(letra.toUpperCase())
     }
 }

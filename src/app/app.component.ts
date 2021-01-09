@@ -1,11 +1,14 @@
 import { Component } from '@angular/core';
 import { Celula } from 'src/models/celula.module';
-import * as myGlobals from 'globals';
 import { Rainha } from 'src/models/rainha.module';
 import { NgbActiveModal, NgbModal, NgbModalConfig } from '@ng-bootstrap/ng-bootstrap';
 import { Bispo } from 'src/models/bispo.module';
 import { Cavalo } from 'src/models/cavalo.module';
 import { Torre } from 'src/models/torre.module';
+
+import * as tmi from 'tmi.js'
+import { Movimento } from 'src/models/movimento.module';
+import { KeyValue } from '@angular/common';
 
 @Component({
   selector: 'app-root',
@@ -13,29 +16,131 @@ import { Torre } from 'src/models/torre.module';
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent {
+  
+  timeLeft: number = 0;
+  interval;
+
+  startTimer(tempo: number) {
+    this.timeLeft = tempo
+    this.interval = setInterval(() => {
+      if(this.timeLeft > 0) {
+        this.timeLeft--;
+      } else {
+        this.timeLeft = -1
+        this.pauseTimer()
+        
+        var mapAsc = new Map([...this.movimentosVotos.entries()].sort(this.keyDescOrder2));
+        console.log(mapAsc.values()) 
+
+        console.log(mapAsc.values().next()) 
+
+        let mov = mapAsc.values().next().value
+
+        this.moverPeca([mov.movimento.i, mov.movimento.j], mov.movimento.destinoI, mov.movimento.destinoJ)
+      }
+    },1000)
+  }
+
+  pauseTimer() {
+    clearInterval(this.interval);
+  }
+  
+  keyDescOrder = (a: any, b: any): number => {
+    return a.value.numeroVezes > b.value.numeroVezes? -1 : (b.value.numeroVezes > a.value.numeroVezes ? 1 : 0);
+  }
+  keyDescOrder2 = (a: any, b: any): number => {
+    return a[1].numeroVezes > b[1].numeroVezes? -1 : (b[1].numeroVezes > a[1].numeroVezes ? 1 : 0);
+  }
 
   title = 'xadrez-on-twitch';
   tabuleiro: Celula[][];
 
   minhasPecas = "branco";
   corAMover = "branco";
+  nick;
+  modoDeJogo;
 
   posicaoReiPreto = [0, 4]
   posicaoReiBranco = [7, 4]
 
   closeResult = '';
-  
-  constructor(private modalService: NgbModal, config: NgbModalConfig) {
+
+  constructor(public modalService: NgbModal, 
+              public config: NgbModalConfig) {
     config.backdrop = 'static';
     config.keyboard = false;
-    
-    myGlobals.minhaCor = this.minhasPecas
-    this.tabuleiro = this.criarTabuleiro();
 
-    this.modalService.open(NgbdModalEscolherCor)
-      .result.then((result) => {
-        this.minhasPecas = result
-    })
+    this.tabuleiro = this.criarTabuleiro()
+  }
+
+  movimentosVotos = new Map()
+  votos = new Set()
+
+  async buscarChat(nick: string) {
+    const client = new tmi.Client({
+      connection: {
+        secure: true,
+        reconnect: true
+      },
+      channels: [ nick ],
+      logger: {
+        error: (message) => {
+          this.criarTabuleiro()
+          console.log("error: "+message)},
+        warn: (message) => {console.log("warn: " +message)},
+        info: (message) => {console.log("info: "+message)}
+      }
+    });
+  
+    client.connect().catch(it => {
+      console.log("deu merda")
+    });
+  
+    client.on('message', (channel, tags, message, self) => {
+      if(this.minhasPecas == this.corAMover){
+        return;
+      }
+      let comando = message.trim().toUpperCase();
+      if (comando.startsWith("!MOVE")) {
+        let palavras = comando.split(" ")
+        if (palavras.length == 3 && palavras[1].length == 2 && palavras[2].length == 2) {
+          console.log(palavras[1] + " -> " + palavras[2])
+          let i = 8 - Number(palavras[1][1])
+          let j = Celula.pegarLinha(palavras[1][0])
+          let destinoI = 8 - Number(palavras[2][1])
+          let destinoJ = Celula.pegarLinha(palavras[2][0])
+
+          let nickMessage = tags['display-name'];
+          if (this.tabuleiro[i][j].peca != null
+              // && !this.votos.has(nickMessage)
+              ) {
+            if (this.movimentosVotos.has(comando)) {
+              this.movimentosVotos.set(comando, {movimento: this.movimentosVotos.get(comando).movimento, 
+                                                numeroVezes: this.movimentosVotos.get(comando).numeroVezes + 1,
+                                                de: palavras[1],
+                                                para: palavras[2]})
+            } else {
+              let podeMover: boolean = this.tabuleiro[i][j].peca.possiveisMovimentos(i, j, this.tabuleiro).filter(it => {
+                return it.destinoI == destinoI && it.destinoJ == destinoJ
+              }).length > 0
+              if (podeMover) {
+                if (this.votos.size == 0)
+                  this.startTimer(20)
+
+                let movimento = new Movimento(i, j, destinoI, destinoJ, this.tabuleiro[destinoI][destinoJ].peca != null)
+                this.movimentosVotos.set(comando, {movimento: movimento, numeroVezes: 1, de: palavras[1], para: palavras[2]})
+              } else {
+                return;
+              }
+            }
+            this.votos.add(tags['display-name'])
+          }
+          console.log(this.movimentosVotos)
+          console.log(this.votos)
+        }
+      }
+      console.log(`${tags['display-name']}: ${message}`);
+    });
   }
 
   criarTabuleiro(): Celula[][] {
@@ -46,6 +151,20 @@ export class AppComponent {
         tabuleiro[i][j] = new Celula(i, j, true);
       }
     }
+
+    this.modalService.open(NgbdModalEscolherCor)
+      .result.then((result) => {
+        let results = result.split("-")
+        console.log(result)
+        this.modoDeJogo = results[0]
+        this.minhasPecas = results[1]
+        this.nick = results[2]
+
+        if (this.modoDeJogo == "online") {
+          this.buscarChat(this.nick)
+        }
+    })
+    
     return tabuleiro;
   }
 
@@ -64,12 +183,14 @@ export class AppComponent {
     i = this.getIndexTabuleiro(i);
     this.limparAcoes()
 
-    if (this.tabuleiro[i][j].peca != null && this.corAMover == this.tabuleiro[i][j].peca.corPeca) {
-      return this.sinalizarMovimentos(i, j)
-    }
-    
-    if (this.possiveisIr.filter(it => it.destinoI == i && it.destinoJ == j).length > 0) {
-      return this.moverPeca(this.pecaClicada, i, j);
+    if (this.minhasPecas == this.corAMover) {
+      if (this.tabuleiro[i][j].peca != null && this.corAMover == this.tabuleiro[i][j].peca.corPeca) {
+        return this.sinalizarMovimentos(i, j)
+      }
+      
+      if (this.possiveisIr.filter(it => it.destinoI == i && it.destinoJ == j).length > 0) {
+        return this.moverPeca(this.pecaClicada, i, j);
+      }
     }
 
     this.sinalizarErro(i, j)
@@ -172,6 +293,8 @@ export class AppComponent {
   }
 
   limparAcoes() {
+    this.votos = new Set()
+    this.movimentosVotos = new Map()
     this.movimentosErrados.forEach(it => {
       this.tabuleiro[it[0]][it[1]].movimentoNaoPossivel = false;
     })
@@ -226,17 +349,77 @@ export class NgbdModalEscolherPeca {
       <h4 class="modal-title" center id="modal-basic-title">Escolha a cor a jogar</h4>
     </div>
     <div class="modal-body">
+      <div class="row" align="center">
+        <div class="col-12 modo">
+          Modo de jogo:
+        </div>
+      </div>
+      <div class="row mt-3">
+        <div class="col-6" align="center">
+          <button type="button" class="btn" align="center" 
+            [class.btn-outline-primary]="modoJogo!='online'" 
+            [class.btn-primary]="modoJogo=='online'" (click)="escolherModo('online')">
+          Online</button>
+        </div>
+        <div class="col-6" align="center">
+          <button type="button" class="btn" align="center" 
+            [class.btn-outline-primary]="modoJogo!='offline'" 
+            [class.btn-primary]="modoJogo=='offline'"  (click)="escolherModo('offline')">
+          Offline</button>
+        </div>
+      </div>
+      <div class="row mt-4" align="center" [style.display]="modoJogo=='offline' ? 'none' : 'block'">
+        <div class="col-12">
+          <div class="col-6" >
+            <input type="text" class="form-control" [(ngModel)]="nick" (keyup)="onKey($event)" placeholder="Entre com o seu nick">
+          </div>
+        </div>
+      </div>
+      <div class="row mt-4" align="center">
+        <div class="col-12 modo">
+          Escolha uma cor
+        </div>
+      </div>
       <div class="row ">
         <div class="col escolherPecaPeao" align="center">
-          <img width="70px" class="peca" [src]="'assets/images/rei-branco.png'" (click)="activeModal.close('branco')"/>
+          <button type="button" class="btn"
+            [class.btn-outline-success]="corPeca!='branco'" 
+            [class.btn-success]="corPeca=='branco'" align="center">
+            <img width="70px" class="peca" [src]="'assets/images/rei-branco.png'" (click)="escolherCor('branco')"/>
+          </button>
         </div>
         <div class="col escolherPecaPeao" align="center">
-          <img width="70px" class="peca" [src]="'assets/images/rei-preto.png'" (click)="activeModal.close('preto')"/>
+          <button type="button" class="btn" 
+            [class.btn-outline-success]="corPeca!='preto'" 
+            [class.btn-success]="corPeca=='preto'"align="center">
+            <img width="70px" class="peca" [src]="'assets/images/rei-preto.png'" (click)="escolherCor('preto')"/>
+          </button>
+        </div>
+      </div>
+
+      <div class="row mt-4">
+        <div class="col-12" align="center">
+        <button type="button" class="btn btn-success" align="center" (click)="activeModal.close(modoJogo + '-' + corPeca +  '-' + nick)">
+          Jogar</button>
         </div>
       </div>
     </div>
   `
 })
 export class NgbdModalEscolherCor {
+  modoJogo = "online";
+  corPeca = "branco"
+  nick: string;
   constructor(public activeModal: NgbActiveModal) {}
+
+  onKey(value: any) {
+    this.nick = event.target.value;
+  }
+  escolherModo(modo:string) {
+    this.modoJogo = modo;
+    console.log(this.modoJogo)
+  }
+  escolherCor(cor:string) {
+    this.corPeca = cor;
+  }
 }
