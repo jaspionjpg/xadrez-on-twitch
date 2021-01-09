@@ -8,7 +8,6 @@ import { Torre } from 'src/models/torre.module';
 
 import * as tmi from 'tmi.js'
 import { Movimento } from 'src/models/movimento.module';
-import { KeyValue } from '@angular/common';
 
 @Component({
   selector: 'app-root',
@@ -29,12 +28,10 @@ export class AppComponent {
         this.timeLeft = -1
         this.pauseTimer()
         
-        var mapAsc = new Map([...this.movimentosVotos.entries()].sort(this.keyDescOrder2));
-        console.log(mapAsc.values()) 
+        var movimentosOrdenados = new Map([...this.movimentosVotos.entries()].sort(this.keyDescOrder2));
 
-        console.log(mapAsc.values().next()) 
-
-        let mov = mapAsc.values().next().value
+        let mov = movimentosOrdenados.values().next().value
+        console.log(mov)
 
         this.moverPeca([mov.movimento.i, mov.movimento.j], mov.movimento.destinoI, mov.movimento.destinoJ)
       }
@@ -112,7 +109,7 @@ export class AppComponent {
 
           let nickMessage = tags['display-name'];
           if (this.tabuleiro[i][j].peca != null
-              // && !this.votos.has(nickMessage)
+              && !this.votos.has(nickMessage)
               ) {
             if (this.movimentosVotos.has(comando)) {
               this.movimentosVotos.set(comando, {movimento: this.movimentosVotos.get(comando).movimento, 
