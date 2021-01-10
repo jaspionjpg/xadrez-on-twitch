@@ -4,6 +4,7 @@ import { Movimento } from './movimento.module';
 export abstract class Peca {
     nomePeca: string;
     corPeca: string;
+    seMoveu: boolean = false
 
     constructor(nomePeca: string, corPeca: string) {
         this.nomePeca = nomePeca;

@@ -99,7 +99,7 @@
       </div>
     </div>
     
-    <div class="col">
+    <div class="col" *ngIf="modoDeJogo == online">
       <div class="card">
         <div class="card-body" *ngIf="minhasPecas == corAMover">
           Sua vez de Jogar!!
@@ -118,7 +118,7 @@
             </div>
             
             <div class="col-4" align="right" *ngIf="votos.size == 0">
-              <h5 class="card-title">Esperando 1 voto para começar a contagem</h5>
+              <h5 class="card-title">Esperando 1 voto valido para começar a contagem</h5>
             </div>
 
             <div class="col-4" align="right" *ngIf="0 > timeLeft">

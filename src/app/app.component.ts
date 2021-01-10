@@ -187,7 +187,7 @@ export class AppComponent {
     i = this.getIndexTabuleiro(i);
     this.limparAcoes()
 
-    if (this.minhasPecas == this.corAMover) {
+    if (this.minhasPecas == this.corAMover || this.modoDeJogo == "offline") {
       if (this.tabuleiro[i][j].peca != null && this.corAMover == this.tabuleiro[i][j].peca.corPeca) {
         return this.sinalizarMovimentos(i, j)
       }
@@ -200,30 +200,34 @@ export class AppComponent {
     this.sinalizarErro(i, j)
   }
 
-  moverPeca(pecaClicada: number[], destinoI: number, destinoJ: number) {
+  moverPeca(pecaClicada: number[], destinoI: number, destinoJ: number, mudarCor: boolean = true) {
     let pecaAnteriorNoDestino = this.tabuleiro[destinoI][destinoJ].peca;
 
     this.tabuleiro[destinoI][destinoJ].peca = this.tabuleiro[pecaClicada[0]][pecaClicada[1]].peca
     this.tabuleiro[pecaClicada[0]][pecaClicada[1]].peca = null
-    console.log(this.tabuleiro[destinoI][destinoJ].peca)
 
     if (this.tabuleiro[destinoI][destinoJ].peca.nomePeca == "rei") {
+      if (!this.tabuleiro[destinoI][destinoJ].peca.seMoveu) {
+        if (2 == destinoJ) {
+          this.moverPeca([destinoI, 0], destinoI, 3, false) 
+        } 
+        if (6 == destinoJ) {
+          this.moverPeca([destinoI, 7], destinoI, 5, false) 
+        }
+      }
+
       if (this.tabuleiro[destinoI][destinoJ].peca.corPeca == "branco") 
         this.posicaoReiBranco = [destinoI, destinoJ]
       else 
         this.posicaoReiPreto = [destinoI, destinoJ]
     }
 
-    if(this.verificarSeReiNaoEstaEmCheque()) {
-      console.log("rei cagado")
-      this.tabuleiro[pecaClicada[0]][pecaClicada[1]].peca = this.tabuleiro[destinoI][destinoJ].peca
-      this.tabuleiro[destinoI][destinoJ].peca = pecaAnteriorNoDestino
-      return;
-    } 
-
-    if (this.verificarMate()) {
-
-    }
+    // if(this.verificarSeReiNaoEstaEmCheque()) {
+    //   console.log("rei cagado")
+    //   this.tabuleiro[pecaClicada[0]][pecaClicada[1]].peca = this.tabuleiro[destinoI][destinoJ].peca
+    //   this.tabuleiro[destinoI][destinoJ].peca = pecaAnteriorNoDestino
+    //   return;
+    // } 
 
     if (this.tabuleiro[destinoI][destinoJ].peca?.nomePeca == "peao" && (destinoI == 0 || destinoI == 7)) {
       this.modalService.open(NgbdModalEscolherPeca)
@@ -238,42 +242,88 @@ export class AppComponent {
             this.tabuleiro[destinoI][destinoJ].peca = new Torre(this.tabuleiro[destinoI][destinoJ].peca.corPeca)
         })}
 
-    if (this.corAMover == "preto") 
-      this.corAMover = "branco"
-    else 
-      this.corAMover = "preto"
+    if (mudarCor) {
+      if (this.corAMover == "preto") 
+        this.corAMover = "branco"
+      else 
+        this.corAMover = "preto" 
+    }
 
     this.possiveisIr = []
+    this.tabuleiro[destinoI][destinoJ].peca.seMoveu = true
+    
+    if (this.verificarMate()) {
+      this.modalService.open(NgbdModalChequeMate)
+      console.log("MATEEEEE SE FUDEUU OTARIO")
+    }
   }
   
-  verificarMate() :boolean{
-    return false;
-  }
-
-  verificarSeReiNaoEstaEmCheque() {
-    let rei = this.pegarMeuRei()
-    let reiEmCheque: boolean = false
+  verificarMate() :boolean {
     for (let x = 0; x < this.tabuleiro.length; x++) {
       let linha = this.tabuleiro[x];
       for (let y = 0; y < linha.length; y++) {
         let celula = linha[y];
 
-        if (celula.peca != null && celula.peca.corPeca != this.corAMover) {
-          let pecasAAtacar = celula.peca.possiveisMovimentos(x, y, this.tabuleiro).filter(it => {
-            return it.destinoI == rei[0] && it.destinoJ == rei[1] && it.capturar
-          })
-
-          if (pecasAAtacar.length > 0) {
-            pecasAAtacar.forEach(it => {
-              this.sinalizarErro(rei[0], rei[1])
-              this.sinalizarErro(x, y)
-            })
-            reiEmCheque = true
+        if (celula.peca != null && celula.peca.corPeca == this.corAMover) {
+          let movimentos = this.pegaPossiveisMovimentos(x, y)
+          if (movimentos.length > 0) {
+            return false
           }
         }
       }
     }
+    return true;
+  }
+
+  verificarSeReiNaoEstaEmCheque(movimento: Movimento) {
+    let rei = Object.assign({}, this.pegarMeuRei())
+    let reiEmCheque: boolean = false
+
+    let tabuleiroAUsar;
+    tabuleiroAUsar = this.clonaTabuleiro()
+    tabuleiroAUsar[movimento.destinoI][movimento.destinoJ].peca = tabuleiroAUsar[movimento.i][movimento.j].peca
+    tabuleiroAUsar[movimento.i][movimento.j].peca = null
+
+    if (tabuleiroAUsar[movimento.destinoI][movimento.destinoJ].peca.nomePeca == "rei") {
+      rei = [movimento.destinoI, movimento.destinoJ]
+    }
+   
+    for (let x = 0; x < tabuleiroAUsar.length; x++) {
+      let linha = tabuleiroAUsar[x];
+      for (let y = 0; y < linha.length; y++) {
+        let celula = linha[y];
+
+        if (celula.peca != null && celula.peca.corPeca != this.corAMover) {
+          let pecasAAtacar = celula.peca.possiveisMovimentos(x, y, tabuleiroAUsar)
+            .filter(it => {
+              return it.destinoI == rei[0] && it.destinoJ == rei[1] && it.capturar
+            })
+
+          if (pecasAAtacar.length > 0) {
+            //   pecasAAtacar.forEach(it => {
+            //     this.sinalizarErro(rei[0], rei[1])
+            //     this.sinalizarErro(x, y)
+            //   })
+            return true;
+          }  
+          
+            // reiEmCheque = true
+          
+        }
+      }
+    }
     return reiEmCheque
+  }
+
+  clonaTabuleiro() {
+    let copiaTabuleiro = [];
+    for (let i = 0; i < 8; i++) {
+      copiaTabuleiro[i] = [];
+      for (let j = 0; j < 8; j++) {
+        copiaTabuleiro[i][j] = Object.assign({}, this.tabuleiro[i][j]);
+      }
+    }
+    return copiaTabuleiro;
   }
 
   pegarMeuRei() {
@@ -289,11 +339,19 @@ export class AppComponent {
 
     if (this.tabuleiro[i][j].peca != null) {
       this.tabuleiro[i][j].clicada = true;
-      this.possiveisIr = this.tabuleiro[i][j].peca.possiveisMovimentos(i, j, this.tabuleiro)
+      this.possiveisIr = this.pegaPossiveisMovimentos(i, j)
       this.possiveisIr.forEach(lancePossivel => {
         this.tabuleiro[lancePossivel.destinoI][lancePossivel.destinoJ].possivelIr = true;
       })
     }
+  }
+  pegaPossiveisMovimentos(i: number, j: number) {
+    return this.tabuleiro[i][j].peca
+      .possiveisMovimentos(i, j, this.tabuleiro)
+      .filter(it => {
+        let reiEmCheque = this.verificarSeReiNaoEstaEmCheque(it);
+        return !reiEmCheque
+      })
   }
 
   limparAcoes() {
@@ -345,6 +403,27 @@ export class NgbdModalEscolherPeca {
   constructor(public activeModal: NgbActiveModal) {}
 }
 
+
+@Component({
+  selector: 'app-root',
+  styleUrls: ['./app.component.scss'],
+  template: `
+    <div class="modal-header">
+      <h4 class="modal-title" center id="modal-basic-title">Vitoria das Brancas</h4>
+    </div>
+    <div class="modal-body">
+      <div class="row ">
+        <div class="col escolherPecaPeao" align="center">
+          <img width="210px" class="peca" [src]="'assets/images/rei-branco.png'" (click)="activeModal.close()"/>
+        </div>
+      </div>
+    </div>
+  `
+})
+export class NgbdModalChequeMate {
+  constructor(public activeModal: NgbActiveModal) {}
+}
+
 @Component({
   selector: 'app-root',
   styleUrls: ['./app.component.scss'],
@@ -375,7 +454,7 @@ export class NgbdModalEscolherPeca {
       <div class="row mt-4" align="center" [style.display]="modoJogo=='offline' ? 'none' : 'block'">
         <div class="col-12">
           <div class="col-6" >
-            <input type="text" class="form-control" [(ngModel)]="nick" (keyup)="onKey($event)" placeholder="Entre com o seu nick">
+            <input type="text" class="form-control" (keyup)="onKey($event)" placeholder="Entre com o seu nick">
           </div>
         </div>
       </div>
