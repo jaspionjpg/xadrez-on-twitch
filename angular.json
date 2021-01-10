@@ -25,6 +25,8 @@
             "aot": true,
             "assets": [
               "src/favicon.ico",
+              "src/icone.png",
+              "src/icone.svg",
               "src/assets",
               "src/assets/svg/*"
             ],

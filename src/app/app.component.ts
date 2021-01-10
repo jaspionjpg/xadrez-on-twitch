@@ -25,17 +25,20 @@ export class AppComponent {
       if(this.timeLeft > 0) {
         this.timeLeft--;
       } else {
-        this.timeLeft = -1
-        this.pauseTimer()
-        
-        var movimentosOrdenados = new Map([...this.movimentosVotos.entries()].sort(this.keyDescOrder2));
-
-        let mov = movimentosOrdenados.values().next().value
-        console.log(mov)
-
-        this.moverPeca([mov.movimento.i, mov.movimento.j], mov.movimento.destinoI, mov.movimento.destinoJ)
+        this.moverPecaOnline();
       }
     },1000)
+  }
+
+  moverPecaOnline() {
+    this.timeLeft = -1
+    this.pauseTimer()
+    var movimentosOrdenados = new Map([...this.movimentosVotos.entries()].sort(this.keyDescOrder2));
+
+    let mov = movimentosOrdenados.values().next().value
+    console.log(mov)
+
+    this.moverPeca([mov.movimento.i, mov.movimento.j], mov.movimento.destinoI, mov.movimento.destinoJ)
   }
 
   pauseTimer() {
@@ -64,6 +67,8 @@ export class AppComponent {
   corAMover = "branco";
   nick;
   modoDeJogo;
+  tempo: number = 20
+  limite: number = 99999
 
   posicaoReiPreto = [0, 4]
   posicaoReiBranco = [7, 4]
@@ -103,6 +108,7 @@ export class AppComponent {
       if(this.minhasPecas == this.corAMover){
         return;
       }
+
       let comando = message.trim().toUpperCase();
       if (comando.startsWith("!MOVE")) {
         let palavras = comando.split(" ")
@@ -115,7 +121,7 @@ export class AppComponent {
 
           let nickMessage = tags['display-name'];
           if (this.tabuleiro[i][j].peca != null && this.tabuleiro[i][j].peca.corPeca != this.minhasPecas
-              // && !this.votos.has(nickMessage)
+              && !this.votos.has(nickMessage)
               ) {
             if (this.movimentosVotos.has(comando)) {
               this.movimentosVotos.set(comando, {movimento: this.movimentosVotos.get(comando).movimento, 
@@ -129,7 +135,7 @@ export class AppComponent {
               }).length > 0
               // if (podeMover) {
                 if (this.timeLeft == -1 && podeMover && this.minhasPecas != this.corAMover)
-                  this.startTimer(20)
+                  this.startTimer(this.tempo)
 
                 let movimento = new Movimento(i, j, destinoI, destinoJ, this.tabuleiro[destinoI][destinoJ].peca != null)
                 this.movimentosVotos.set(comando, {movimento: movimento, numeroVezes: 1, de: palavras[1], para: palavras[2], podeMover: podeMover})
@@ -142,6 +148,10 @@ export class AppComponent {
           console.log(this.movimentosVotos)
           console.log(this.votos)
         }
+      }
+      
+      if (this.votos.size >= this.limite) {
+        this.moverPecaOnline();
       }
       console.log(`${tags['display-name']}: ${message}`);
     });
@@ -163,6 +173,16 @@ export class AppComponent {
         this.modoDeJogo = results[0]
         this.minhasPecas = results[1]
         this.nick = results[2]
+        this.tempo = Number(results[3])
+        let limite = results[4]
+        if(limite == "sem limite") {
+          this.limite = 99999
+        } else {
+          this.limite = Number(results[4])
+        }
+
+        console.log("tempo: " +this.tempo)
+        console.log("limite: " +this.limite)
 
         if (this.modoDeJogo == "online") {
           this.buscarChat(this.nick)
@@ -457,11 +477,38 @@ export class NgbdModalChequeMate {
         </div>
       </div>
       <div class="row mt-4" align="center" [style.display]="modoJogo=='offline' ? 'none' : 'block'">
-        <div class="col-12">
-          <div class="col-6" >
-            <input type="text" class="form-control" (keyup)="onKey($event)" placeholder="Entre com o seu nick">
+        <div class="row">
+          <div class="col-12">
+            <div class="col-6" >
+              <input type="text" class="form-control" (keyup)="onKey($event)" placeholder="Entre com o seu nick">
+            </div>
           </div>
         </div>
+        <div class="row mt-2">
+          <div class="col-1"></div>
+          <div class="form-group col-5">
+            <label for="inputState">Tempo para votação</label>
+            <select id="inputState" class="form-control" (change)="onChangeTempo($event)">
+              <option>1</option>
+              <option>10</option>
+              <option selected>20</option>
+              <option>40</option>
+              <option>60</option>
+            </select>
+          </div>
+          <div class="form-group col-5">
+            <label for="inputState">Votos para jogar</label>
+            <select id="inputState" class="form-control" (change)="onChangeLimite($event)">
+              <option selected>sem limite</option>
+              <option>100</option>
+              <option>50</option>
+              <option>10</option>
+              <option>1</option>
+            </select>
+          </div>
+        </div>
+
+
       </div>
       <div class="row mt-4" align="center">
         <div class="col-12 modo">
@@ -487,10 +534,11 @@ export class NgbdModalChequeMate {
 
       <div class="row mt-4">
         <div class="col-12" align="center">
-        <button type="button" class="btn btn-success" align="center" (click)="activeModal.close(modoJogo + '-' + corPeca +  '-' + nick)">
+        <button type="button" class="btn btn-success" align="center" (click)="activeModal.close(modoJogo + '-' + corPeca +  '-' + nick + '-' + tempo + '-' + limite)">
           Jogar</button>
         </div>
       </div>
+
     </div>
   `
 })
@@ -498,10 +546,23 @@ export class NgbdModalEscolherCor {
   modoJogo = "online";
   corPeca = "branco"
   nick: string;
+
+  tempo = "20"
+  limite = "sem limite"
+
+public isCollapsed = false;
   constructor(public activeModal: NgbActiveModal) {}
 
   onKey(event: any) {
     this.nick = event.target.value.trim();
+  }
+  onChangeTempo(event: any) {
+    this.tempo = event.target.value.trim();
+    console.log(this.tempo)
+  }
+  onChangeLimite(event: any) {
+    this.limite = event.target.value.trim();
+    console.log(this.limite)
   }
   escolherModo(modo:string) {
     this.modoJogo = modo;
