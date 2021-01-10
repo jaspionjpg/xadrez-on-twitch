@@ -1,6 +1,5 @@
 # XadrezOnTwitch
-
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 11.0.6.
+Acesse a demonstração https://xadrez-na-twitch.web.app/
 
 ## Development server
 

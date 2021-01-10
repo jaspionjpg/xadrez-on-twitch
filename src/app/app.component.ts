@@ -16,7 +16,7 @@ import { Movimento } from 'src/models/movimento.module';
 })
 export class AppComponent {
   
-  timeLeft: number = 0;
+  timeLeft: number = -1;
   interval;
 
   startTimer(tempo: number) {
@@ -128,7 +128,7 @@ export class AppComponent {
                 return it.destinoI == destinoI && it.destinoJ == destinoJ
               }).length > 0
               // if (podeMover) {
-                if (this.votos.size == 0)
+                if (this.timeLeft == -1 && podeMover && this.minhasPecas != this.corAMover)
                   this.startTimer(20)
 
                 let movimento = new Movimento(i, j, destinoI, destinoJ, this.tabuleiro[destinoI][destinoJ].peca != null)
@@ -250,6 +250,8 @@ export class AppComponent {
     }
 
     this.possiveisIr = []
+    this.votos = new Set()
+    this.movimentosVotos = new Map()
     this.tabuleiro[destinoI][destinoJ].peca.seMoveu = true
     
     if (this.verificarMate()) {

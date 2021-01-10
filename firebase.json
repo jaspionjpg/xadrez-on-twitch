@@ -1,0 +1,16 @@
+{
+  "hosting": {
+    "public": "dist/xadrez-on-twitch",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}
