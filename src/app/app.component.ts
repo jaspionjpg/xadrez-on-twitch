@@ -36,7 +36,6 @@ export class AppComponent {
     var movimentosOrdenados = new Map([...this.movimentosVotos.entries()].sort(this.keyDescOrder2));
 
     let mov = movimentosOrdenados.values().next().value
-    console.log(mov)
 
     this.moverPeca([mov.movimento.i, mov.movimento.j], mov.movimento.destinoI, mov.movimento.destinoJ)
   }
@@ -95,14 +94,12 @@ export class AppComponent {
         error: (message) => {
           this.criarTabuleiro()
           console.log("error: "+message)},
-        warn: (message) => {console.log("warn: " +message)},
-        info: (message) => {console.log("info: "+message)}
+        warn: (message) => {},
+        info: (message) => {}
       }
     });
   
-    client.connect().catch(it => {
-      console.log("deu merda")
-    });
+    client.connect();    
   
     client.on('message', (channel, tags, message, self) => {
       if(this.minhasPecas == this.corAMover){
@@ -113,7 +110,6 @@ export class AppComponent {
       if (comando.startsWith("!MOVE")) {
         let palavras = comando.split(" ")
         if (palavras.length == 3 && palavras[1].length == 2 && palavras[2].length == 2) {
-          console.log(palavras[1] + " -> " + palavras[2])
           let i = 8 - Number(palavras[1][1])
           let j = Celula.pegarLinha(palavras[1][0])
           let destinoI = 8 - Number(palavras[2][1])
@@ -145,15 +141,12 @@ export class AppComponent {
             }
             this.votos.add(tags['display-name'])
           }
-          console.log(this.movimentosVotos)
-          console.log(this.votos)
         }
       }
       
       if (this.votos.size >= this.limite) {
         this.moverPecaOnline();
       }
-      console.log(`${tags['display-name']}: ${message}`);
     });
   }
 
@@ -169,7 +162,6 @@ export class AppComponent {
     this.modalService.open(NgbdModalEscolherCor)
       .result.then((result) => {
         let results = result.split("-")
-        console.log(result)
         this.modoDeJogo = results[0]
         this.minhasPecas = results[1]
         this.nick = results[2]
@@ -180,9 +172,6 @@ export class AppComponent {
         } else {
           this.limite = Number(results[4])
         }
-
-        console.log("tempo: " +this.tempo)
-        console.log("limite: " +this.limite)
 
         if (this.modoDeJogo == "online") {
           this.buscarChat(this.nick)
@@ -241,13 +230,6 @@ export class AppComponent {
       else 
         this.posicaoReiPreto = [destinoI, destinoJ]
     }
-
-    // if(this.verificarSeReiNaoEstaEmCheque()) {
-    //   console.log("rei cagado")
-    //   this.tabuleiro[pecaClicada[0]][pecaClicada[1]].peca = this.tabuleiro[destinoI][destinoJ].peca
-    //   this.tabuleiro[destinoI][destinoJ].peca = pecaAnteriorNoDestino
-    //   return;
-    // } 
 
     if (this.tabuleiro[destinoI][destinoJ].peca?.nomePeca == "peao" && (destinoI == 0 || destinoI == 7)) {
       this.modalService.open(NgbdModalEscolherPeca)
@@ -480,7 +462,8 @@ export class NgbdModalChequeMate {
         <div class="row">
           <div class="col-12">
             <div class="col-6" >
-              <input type="text" class="form-control" (keyup)="onKey($event)" placeholder="Entre com o seu nick">
+              <input type="text" class="form-control" required (keyup)="onKey($event)" placeholder="Entre com o nick da twitch">
+              <small class="form-text text-muted">Garanta que o nick que colocar seja exatamente igual ao do streamer</small>
             </div>
           </div>
         </div>
@@ -538,7 +521,6 @@ export class NgbdModalChequeMate {
           Jogar</button>
         </div>
       </div>
-
     </div>
   `
 })
@@ -558,15 +540,12 @@ public isCollapsed = false;
   }
   onChangeTempo(event: any) {
     this.tempo = event.target.value.trim();
-    console.log(this.tempo)
   }
   onChangeLimite(event: any) {
     this.limite = event.target.value.trim();
-    console.log(this.limite)
   }
   escolherModo(modo:string) {
     this.modoJogo = modo;
-    console.log(this.modoJogo)
   }
   escolherCor(cor:string) {
     this.corPeca = cor;
