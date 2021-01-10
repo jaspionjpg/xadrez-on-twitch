@@ -254,6 +254,9 @@ export class AppComponent {
     
     if (this.verificarMate()) {
       this.modalService.open(NgbdModalChequeMate)
+        .result.then(it => {
+          // this.tabuleiro = this.criarTabuleiro()
+        })
       console.log("MATEEEEE SE FUDEUU OTARIO")
     }
   }
