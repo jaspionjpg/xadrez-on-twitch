@@ -1,1 +1,3 @@
-export var minhaCor;
+export class GlobalConstants {
+    public static error: string;
+}

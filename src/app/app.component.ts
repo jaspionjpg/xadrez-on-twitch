@@ -5,6 +5,7 @@ import { NgbActiveModal, NgbModal, NgbModalConfig } from '@ng-bootstrap/ng-boots
 import { Bispo } from 'src/models/bispo.module';
 import { Cavalo } from 'src/models/cavalo.module';
 import { Torre } from 'src/models/torre.module';
+import {GlobalConstants} from './globals'
 
 import * as tmi from 'tmi.js'
 import { Movimento } from 'src/models/movimento.module';
@@ -74,9 +75,7 @@ export class AppComponent {
 
   constructor(public modalService: NgbModal, 
               public config: NgbModalConfig) {
-    config.backdrop = 'static';
-    config.keyboard = false;
-
+    
     this.tabuleiro = this.criarTabuleiro()
   }
 
@@ -92,14 +91,16 @@ export class AppComponent {
       channels: [ nick ],
       logger: {
         error: (message) => {
-          this.criarTabuleiro()
+          GlobalConstants.error = "erro ao conectar";
+          this.tabuleiro = this.criarTabuleiro()
+          
           console.log("error: "+message)},
         warn: (message) => {},
         info: (message) => {}
       }
     });
   
-    client.connect();    
+    client.connect();  
   
     client.on('message', (channel, tags, message, self) => {
       if(this.minhasPecas == this.corAMover){
@@ -109,11 +110,19 @@ export class AppComponent {
       let comando = message.trim().toUpperCase();
       if (comando.startsWith("!MOVE")) {
         let palavras = comando.split(" ")
-        if (palavras.length == 3 && palavras[1].length == 2 && palavras[2].length == 2) {
+        if (palavras.length == 3 && palavras[1].length == 2 && palavras[2].length == 2 && palavras[2] != palavras[1]) {
           let i = 8 - Number(palavras[1][1])
           let j = Celula.pegarLinha(palavras[1][0])
           let destinoI = 8 - Number(palavras[2][1])
           let destinoJ = Celula.pegarLinha(palavras[2][0])
+
+          if (Number.isNaN(palavras[1][1]) || 
+              Number.isNaN(palavras[2][1]) || 
+              Number(palavras[1][1]) > 8 || 
+              Number(palavras[2][1]) > 8 || 
+                destinoJ == null || j == null){
+            return;
+          }
 
           let nickMessage = tags['display-name'];
           if (this.tabuleiro[i][j].peca != null && this.tabuleiro[i][j].peca.corPeca != this.minhasPecas
@@ -149,8 +158,10 @@ export class AppComponent {
       }
     });
   }
+  
 
-  criarTabuleiro(): Celula[][] {
+  criarTabuleiro(error = false): Celula[][] {
+    this.corAMover = "branco"
     let tabuleiro = [];
     for (let i = 0; i < 8; i++) {
       tabuleiro[i] = [];
@@ -159,7 +170,7 @@ export class AppComponent {
       }
     }
 
-    this.modalService.open(NgbdModalEscolherCor)
+    this.modalService.open(NgbdModalEscolherCor, {backdrop :'static', keyboard :false})
       .result.then((result) => {
         let results = result.split("-")
         this.modoDeJogo = results[0]
@@ -176,6 +187,7 @@ export class AppComponent {
         if (this.modoDeJogo == "online") {
           this.buscarChat(this.nick)
         }
+        GlobalConstants.error = null
     })
     
     return tabuleiro;
@@ -232,7 +244,7 @@ export class AppComponent {
     }
 
     if (this.tabuleiro[destinoI][destinoJ].peca?.nomePeca == "peao" && (destinoI == 0 || destinoI == 7)) {
-      this.modalService.open(NgbdModalEscolherPeca)
+      this.modalService.open(NgbdModalEscolherPeca, {backdrop :'static', keyboard :false})
         .result.then((result) => {
           if  (result == "bispo") 
             this.tabuleiro[destinoI][destinoJ].peca = new Bispo(this.tabuleiro[destinoI][destinoJ].peca.corPeca)
@@ -428,7 +440,11 @@ export class NgbdModalEscolherPeca {
   `
 })
 export class NgbdModalChequeMate {
-  constructor(public activeModal: NgbActiveModal) {}
+  constructor(public activeModal: NgbActiveModal,
+              private config: NgbModalConfig) {
+    config.backdrop = true
+    config.keyboard = true
+  }
 }
 
 @Component({
@@ -521,6 +537,13 @@ export class NgbdModalChequeMate {
           Jogar</button>
         </div>
       </div>
+      <div class="row mt-4"  [style.display]="error!='erro ao conectar' ? 'none' : 'block'">
+        <div class="col-12">
+          <div class="alert alert-danger" role="alert">
+            Ocorreu um erro ao conectar com o chat da twitch, tente novamente
+          </div>
+        </div>
+      </div>
     </div>
   `
 })
@@ -531,8 +554,9 @@ export class NgbdModalEscolherCor {
 
   tempo = "20"
   limite = "sem limite"
+  error = GlobalConstants.error
 
-public isCollapsed = false;
+  public isCollapsed = false;
   constructor(public activeModal: NgbActiveModal) {}
 
   onKey(event: any) {
