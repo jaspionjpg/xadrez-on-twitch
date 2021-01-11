@@ -188,6 +188,7 @@ export class AppComponent {
           this.buscarChat(this.nick)
         }
         GlobalConstants.error = null
+        GlobalConstants.vencedor = null
     })
     
     return tabuleiro;
@@ -269,6 +270,10 @@ export class AppComponent {
     this.tabuleiro[destinoI][destinoJ].peca.seMoveu = true
     
     if (this.verificarMate()) {
+      if (this.corAMover == "preto") 
+        GlobalConstants.vencedor = "branco"
+      else 
+        GlobalConstants.vencedor = "preto" 
       this.modalService.open(NgbdModalChequeMate)
         .result.then(it => {
           // this.tabuleiro = this.criarTabuleiro()
@@ -374,8 +379,6 @@ export class AppComponent {
   }
 
   limparAcoes() {
-    this.votos = new Set()
-    this.movimentosVotos = new Map()
     this.movimentosErrados.forEach(it => {
       this.tabuleiro[it[0]][it[1]].movimentoNaoPossivel = false;
     })
@@ -428,18 +431,20 @@ export class NgbdModalEscolherPeca {
   styleUrls: ['./app.component.scss'],
   template: `
     <div class="modal-header">
-      <h4 class="modal-title" center id="modal-basic-title">Vitoria das Brancas</h4>
+      <h4 class="modal-title" center id="modal-basic-title">Vitoria do {{vencedor}}</h4>
     </div>
     <div class="modal-body">
       <div class="row ">
         <div class="col escolherPecaPeao" align="center">
-          <img width="210px" class="peca" [src]="'assets/images/rei-branco.png'" (click)="activeModal.close()"/>
+          <img width="210px" class="peca" [src]="'assets/images/rei-' + vencedor + '.png'" (click)="activeModal.close()"/>
         </div>
       </div>
     </div>
   `
 })
 export class NgbdModalChequeMate {
+  
+  vencedor = GlobalConstants.vencedor
   constructor(public activeModal: NgbActiveModal,
               private config: NgbModalConfig) {
     config.backdrop = true
